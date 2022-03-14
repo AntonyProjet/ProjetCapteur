@@ -42,7 +42,7 @@ def getDatas(): # recuperation des donnees du fichier txt pour la distance du li
 
     print("Distance : %.1f"% (distance_lit))
 
-def addError():
+def addError(): # compteur d'erreurs
     global nb_erreurs
     nb_erreurs = nb_erreurs + 1
 

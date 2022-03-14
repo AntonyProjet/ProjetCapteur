@@ -13,9 +13,7 @@ Cette borne est pilotée par un Raspberry Pi 3 relié à deux capteurs Ultrasons
 
 ### Pré-requis
 
-Il est nécessaire de posséder l'ensemble des programmes du depot ainsi que 2 capteurs HC-SR04 et une Raspberry Pi 3
-
----
+Il est nécessaire de posséder l'ensemble des programmes du depot ainsi que 2 capteurs HC-SR04 et également une Raspberry Pi 3
 
 ## Démarrage
 
@@ -29,17 +27,15 @@ Une fois le programme terminé, les seuils seront alors enregistrer sur le fichi
 sudo python capteur.py
 ```
 
----
-
 ## Langages utilisés
 * Python - 3.7.3
 * MySQL
 
---
+---
 
 ### Auteurs
 * Antony Decroix
 * Jean-Matthias Leroy
 * Baptiste Louvel
 
---
+---

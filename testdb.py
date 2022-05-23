@@ -11,62 +11,106 @@ except MySQLdb.Error as e:
     print("Connexion impossible %.1d : %s"% (e.args[0], e.args[1]))
 
 try:
-    netifaces.ifaddresses('wlan0') # recup des infos sur le wlan0
-    ip = netifaces.ifaddresses('wlan0')[netifaces.AF_INET][0]['addr'] # on prend seulement l'addresse
+    try:
+        netifaces.ifaddresses('wlan0') # recup des infos sur le wlan0
+        ip = netifaces.ifaddresses('wlan0')[netifaces.AF_INET][0]['addr'] # on prend seulement l'addresse
 
-    # test des horraires
-    time_now = time.strftime('%H:%M', time.localtime()) # recup de l'heure
-    values_now = time_now.split(":")
-    heure_now = int(values_now[0])
-    minute_now = int(values_now[1]) 
+        heure_now = 20
 
-    cursor = conn.cursor() 
+        for i in range(25):
+            print("\n+--------------------------------------------------------------------+")
+            # --- recuperation des horraires ---
+            heure_now = heure_now + 1
+            print("| Heure en cours : %i"% (heure_now))
 
-    # recup id borne
-    cursor.execute(""" SELECT idBorne FROM Borne WHERE IP_Borne = '%s' """ % (ip))
+            total_now = int(heure_now*3600)
 
-    idBorne = cursor.fetchone()
-    
-    idBorne_str = ''.join(map(str, idBorne)) # convert tuple to str
-    print(idBorne_str)
+            no_stop_hours = 0
 
-    # recup seuil couche
-    cursor.execute(""" 
-    SELECT DATE_FORMAT(Couche_Resident, "%H:%i:%s") FROM Resident WHERE idResident = '1'
-    """)
+            cursor = conn.cursor() 
 
-    couche_heure = cursor.fetchall()
+            # -- recuperer l'idBorne en fonction de notre adresse IP --
+            cursor.execute(""" SELECT idBorne FROM Borne WHERE IP_Borne = '%s' """% (ip))
 
-    couche_str = ''.join(map(str, couche_heure)) # convert tuple to str
-    couche_str = couche_str.replace("(","").replace(")","").replace("'","").replace(",","") # on supprime les choses qu'on veut pas
-    print(couche_str)
+            raw_idBorne = cursor.fetchone()
+            print(raw_idBorne)
 
-    # recup seuil reveil
-    cursor.execute(""" 
-    SELECT DATE_FORMAT(Leve_Resident, "%H:%i:%s") FROM Resident WHERE idResident = '1'
-    """)
+            idBorne_str = ''.join(map(str, raw_idBorne)) # convertion tuple to str
+            print("| Cette borne possède l'ID : %s"% (idBorne_str))
 
-    reveil_heure = cursor.fetchall()
+            # -- recuperer l'idChambre en fonction de notre idBorne / adresse IP --
+            cursor.execute(""" SELECT idChambre FROM Borne WHERE idBorne = '%s' """% (raw_idBorne))
 
-    reveil_str = ''.join(map(str, reveil_heure)) # convert tuple to str
-    reveil_str = reveil_str.replace("(","").replace(")","").replace("'","").replace(",","") # on supprime les choses qu'on veut pas
-    print(reveil_str)
-    
-    value_couche = couche_str.split(":") # get heure
-    heure_couche = int(value_couche[0])
+            raw_idChambre = cursor.fetchone()
+            print(raw_idChambre)
 
-    value_reveil = reveil_str.split(":") # get heure
-    heure_reveil = int(value_reveil[0])
-
-    if((heure_now > heure_reveil) and (heure_now < heure_couche)):
-        print("Pas activee")
-    else:
-        print("Activee")
+            idChambre_str = ''.join(map(str, raw_idChambre)) # convertion tuple to str
+            print("| Cette borne est liee a la chambre d'ID : %s"% (idChambre_str))
 
 
+            # -- recup seuil couche --
+            cursor.execute(""" SELECT Couche FROM Resident WHERE idResident = '%s' """% (raw_idChambre))
 
-except MySQLdb.Error as e:
-    print("Erreur %.1d : %s"% (e.args[0], e.args[1]))
+            raw_couche = cursor.fetchone()
+            print(raw_couche)
+            # print(raw_couche[0].total_seconds()) # debug
+
+            couche_str = ''.join(map(str, raw_couche)) # convertion tuple to str
+            couche_str = couche_str.replace("(","").replace(")","").replace("'","").replace(",","") # on supprime les choses qu'on veut pas
+            print("| L'heure du couche est : %s"% (couche_str))
+
+            # -- recup seuil reveil --
+            cursor.execute(""" SELECT Leve FROM Resident WHERE idResident = '%s' """% (raw_idChambre))
+
+            raw_leve = cursor.fetchone()
+            print(raw_leve)
+            # print(raw_leve[0].total_seconds()) # debug
+
+            leve_str = ''.join(map(str, raw_leve)) # convertion tuple to str
+            leve_str = leve_str.replace("(","").replace(")","").replace("'","").replace(",","") # on supprime les choses qu'on veut pas
+            print("| L'heure du leve est : %s"% (leve_str))
+
+            
+            value_couche = couche_str.split(":") # on separe nos elements en une liste
+            temps_couche = ((int(value_couche[0]))*3600) + ((int(value_couche[1]))*60) # on realise la conversion vers les secondes
+
+            value_reveil = leve_str.split(":") # on separe nos elements en une liste
+            temps_reveil = ((int(value_reveil[0]))*3600) + ((int(value_reveil[1]))*60) # on realise la conversion vers les secondes
+
+            if((total_now > temps_reveil) and (total_now < temps_couche)): # on teste si on est dans la plage d'activation de la borne
+                print("| /!\ --> Impossible d'envoyer l'alerte, la borne n'est pas dans sa plage d'activation pre-configure\n")
+            else:
+                if((temps_couche == 0) and (temps_reveil == 0)):
+                    print("| /!\ ALERTE : La plage d'activation de la borne est configuree pour toute la journee.\n\t--> L'alerte va etre envoye sur la base de donnee ! ")
+                else:
+                    print("| /!\ ALERTE : La plage d'activation de la borne est configuree de %s à %s.\n\t--> L'alerte va etre envoye sur la base de donnee ! "% (couche_str, leve_str))
+
+                # -- recup si la borne est en alerte ou non --
+                cursor.execute(""" SELECT Status FROM Borne WHERE IP_Borne = '%s' """% (ip))
+
+                raw_status = cursor.fetchone()
+                status_str = ''.join(map(str, raw_status)) # convertion tuple to str
+
+                if(raw_status == 0): # si on recupere un status de 0 donc FALSE, la borne n'est pas en alerte donc on change le status 
+                    try:
+                        cursor.execute(""" UPDATE Borne SET Status = '1' WHERE idBorne = '%s' """% (idBorne_str))
+                        print("| \t--> Mise a jour du status de la borne sur la base de donnee !")
+
+                    except MySQLdb.Error as exe:
+                        print("| /!\ --> Erreur insertion de l'update du Status %.1d : %s"% (e.args[0], e.args[1]))
+
+                else: # si TRUE, on passe car deja en alerte
+                    print("\t--> Alerte deja en cours.. Temporisation..")
+                    time.sleep(10)
+
+
+    except MySQLdb.Error as e:
+        print("Erreur %.1d : %s"% (e.args[0], e.args[1]))
+
+except Exception as excep:
+    print("+--- ERREUR GLOBALE ---")
+    print("TYPE : ", excep.__class__)
+    print("MESSAGE : ", excep)
 
 conn.commit()
 conn.close()

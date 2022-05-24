@@ -1,6 +1,7 @@
 import MySQLdb
 import time
 import netifaces
+from datetime import datetime
 
 try:
     conn = MySQLdb.connect(host="192.168.10.12",
@@ -15,7 +16,7 @@ try:
         netifaces.ifaddresses('wlan0') # recup des infos sur le wlan0
         ip = netifaces.ifaddresses('wlan0')[netifaces.AF_INET][0]['addr'] # on prend seulement l'addresse
 
-        heure_now = 20
+        heure_now = 15
 
         for i in range(25):
             print("\n+--------------------------------------------------------------------+")
@@ -49,7 +50,7 @@ try:
 
 
             # -- recup seuil couche --
-            cursor.execute(""" SELECT Couche FROM Resident WHERE idResident = '%s' """% (raw_idChambre))
+            cursor.execute(""" SELECT Couche FROM Resident WHERE idChambre = '%s' """% (raw_idChambre))
 
             raw_couche = cursor.fetchone()
             print(raw_couche)
@@ -60,7 +61,7 @@ try:
             print("| L'heure du couche est : %s"% (couche_str))
 
             # -- recup seuil reveil --
-            cursor.execute(""" SELECT Leve FROM Resident WHERE idResident = '%s' """% (raw_idChambre))
+            cursor.execute(""" SELECT Leve FROM Resident WHERE idChambre = '%s' """% (raw_idChambre))
 
             raw_leve = cursor.fetchone()
             print(raw_leve)
@@ -84,16 +85,32 @@ try:
                     print("| /!\ ALERTE : La plage d'activation de la borne est configuree pour toute la journee.\n\t--> L'alerte va etre envoye sur la base de donnee ! ")
                 else:
                     print("| /!\ ALERTE : La plage d'activation de la borne est configuree de %s à %s.\n\t--> L'alerte va etre envoye sur la base de donnee ! "% (couche_str, leve_str))
+                
+                 # -- recup si la borne est en alerte ou non --
+                cursor.execute(""" SELECT MAX(idAlerte) FROM Alerte WHERE idBorne = '%s' """% (raw_idBorne))
 
-                # -- recup si la borne est en alerte ou non --
-                cursor.execute(""" SELECT Status FROM Borne WHERE IP_Borne = '%s' """% (ip))
+                raw_idAlerte = cursor.fetchone()
+                
+                cursor.execute(""" SELECT Status FROM Alerte WHERE idAlerte = '%s' """% (raw_idAlerte))
+                
+                raw_statut = cursor.fetchone()
+                
+                
+                print("====")
+                print(raw_statut[0])
 
-                raw_status = cursor.fetchone()
-                status_str = ''.join(map(str, raw_status)) # convertion tuple to str
+                date_now = datetime.date(datetime.now())
+                time_now = datetime.time(datetime.now())
 
-                if(raw_status == 0): # si on recupere un status de 0 donc FALSE, la borne n'est pas en alerte donc on change le status 
+                # si 0 alors l'alerte na pas ete terminée donc on ne peut pas renvoyer
+
+                if(raw_statut[0] == 1): # si on recupere un status de 1 donc FALSE, la borne n'est pas en alerte donc on crée une alerte 
                     try:
-                        cursor.execute(""" UPDATE Borne SET Status = '1' WHERE idBorne = '%s' """% (idBorne_str))
+                        print("ici")
+                        #cursor.execute(""" UPDATE Borne SET Status = '1' WHERE idBorne = '%s' """% (idBorne_str))
+                        cursor.execute(""" INSERT INTO Alerte (Date, Status, Compteur, DebutAlerte, FinAlerte, idBorne) 
+                        VALUES ('%s', 0, 0, '%s', NULL, '%s') 
+                        """% (date_now, time_now, raw_idBorne))
                         print("| \t--> Mise a jour du status de la borne sur la base de donnee !")
 
                     except MySQLdb.Error as exe:

@@ -1,6 +1,6 @@
-import netifaces as ni
+from datetime import datetime
 
-ni.ifaddresses('wlan0')
-ip = ni.ifaddresses('wlan0')[ni.AF_INET][0]['addr']
-print(ip)
-print(type(ip))
+print(datetime.now())
+
+print(datetime.date(datetime.now()))
+print(datetime.time(datetime.now()))

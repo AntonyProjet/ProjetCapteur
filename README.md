@@ -23,8 +23,8 @@ Il est nécessaire de posséder l'ensemble des programmes du dépôt ainsi que 2
 ```
 sudo python seuils.py
 ```
-Une fois le programme terminé, les seuils seront alors enregistrer sur le fichier texte "data.txt".  
-* Vous pourrez alors lancer le programme principale :
+Une fois le programme terminé, les seuils seront alors enregistrés sur le fichier texte "data.txt".  
+* Vous pourrez alors lancer le programme principal :
 ```
 sudo python capteur.py
 ```

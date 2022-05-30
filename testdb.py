@@ -16,9 +16,9 @@ try:
         netifaces.ifaddresses('wlan0') # recup des infos sur le wlan0
         ip = netifaces.ifaddresses('wlan0')[netifaces.AF_INET][0]['addr'] # on prend seulement l'addresse
 
-        heure_now = 15
+        heure_now = 19
 
-        for i in range(25):
+        for i in range(2):
             print("\n+--------------------------------------------------------------------+")
             # --- recuperation des horraires ---
             heure_now = heure_now + 1
@@ -95,7 +95,6 @@ try:
                 
                 raw_statut = cursor.fetchone()
                 
-                
                 print("====")
                 print(raw_statut[0])
 
@@ -110,11 +109,11 @@ try:
                         #cursor.execute(""" UPDATE Borne SET Status = '1' WHERE idBorne = '%s' """% (idBorne_str))
                         cursor.execute(""" INSERT INTO Alerte (Date, Status, Compteur, DebutAlerte, FinAlerte, idBorne) 
                         VALUES ('%s', 0, 0, '%s', NULL, '%s') 
-                        """% (date_now, time_now, raw_idBorne))
+                        """% (date_now, time_now, idBorne_str))
                         print("| \t--> Mise a jour du status de la borne sur la base de donnee !")
 
                     except MySQLdb.Error as exe:
-                        print("| /!\ --> Erreur insertion de l'update du Status %.1d : %s"% (e.args[0], e.args[1]))
+                        print("| /!\ --> Erreur %.1d lors de l'insertion de l'update du Status : %s"% (exe.args[0], exe.args[1]))
 
                 else: # si TRUE, on passe car deja en alerte
                     print("\t--> Alerte deja en cours.. Temporisation..")

@@ -34,8 +34,6 @@ distance_lit = 0.0 # variable globale pour la distance de l'obstacle, recupere v
 compteur = 0 # variable pour le compteur de detection avant declechement de l'alerte
 nb_erreurs = 0 # variable globale pour le compteur d'erreur
 
-time.sleep(30)
-
 try:
     conn = MySQLdb.connect(host="192.168.10.12",
                            user="Administrateur",
@@ -129,11 +127,16 @@ def measure_capt(Trig, Echo): # mesure des capteurs
 # main
 try:
     getDatas() # recuperation des donnees
+
+    try: # dans le cadre des tests, le programme n'est pas dans une boucle infinie
+        repeat_times = int(input("Nombre de repetitions de la mesure de test : "))
+    except (SyntaxError, ValueError):
+        repeat_times = 10
+        print("--> Erreur de saisie, valeur par defaut : 10")
+
     print("\n")
 
-    i = 0 # compteur du nombre de mesure 
-
-    while True:
+    for i in range(repeat_times):
         time.sleep(0.25) #0.25sec
         distance = [] # liste vide
         _distance = []
@@ -169,8 +172,6 @@ try:
             _moy_distance = sum(_distance)/1
         else:
             _moy_distance = sum(_distance)/len(_distance)
-
-        i = i + 1
                 
         print("+----- Distance Capteur : -----+")
         print("| Capteur 1 - Mesure : %.1f cm | Reelle : %.1f cm"% (moy_distance, distance_lit))
@@ -191,14 +192,6 @@ try:
             try:
                 netifaces.ifaddresses('wlan0') # recup des infos sur le wlan0
                 ip = netifaces.ifaddresses('wlan0')[netifaces.AF_INET][0]['addr'] # on prend seulement l'addresse
-                
-                try:
-                    conn = MySQLdb.connect(host="192.168.10.12",
-                                           user="Administrateur",
-                                           passwd="Chute83",
-                                           db="Ehpad_Alerte")
-                except MySQLdb.Error as e:
-                    print("Connexion impossible %.1d : %s"% (e.args[0], e.args[1]))
 
                 print("\n+--------------------------------------------------------------------+")
                 # --- recuperation des horraires ---
@@ -207,7 +200,7 @@ try:
                 heure_now = (int(values_now[0]))*3600
                 minute_now = (int(values_now[1]))*60
                 total_now = minute_now + heure_now
-                total_now = 23*3600
+                total_now = 22*3600
 
                 cursor = conn.cursor() 
 
@@ -286,13 +279,6 @@ try:
 
                     if(raw_statut[0] == 0): # si on recupere un status de 0 donc FALSE, la borne n'est pas en alerte donc on crée une alerte 
                         print("| Génération d'une nouvelle alerte...")
-                        
-                        for l in range(10):
-                            GPIO.output(6, True)
-                            time.sleep(0.1)
-                            GPIO.output(6, False)
-                            time.sleep(0.1)
-                            
                         try:
                             cursor.execute(""" INSERT INTO Alerte (Date, Status, Compteur, DebutAlerte, FinAlerte, idBorne) 
                             VALUES ('%s', 1, 0, '%s', NULL, '%s') 
@@ -322,7 +308,7 @@ try:
                         time.sleep(0.2)
                         GPIO.output(6, False)
                         time.sleep(0.2)
-                        GPIO.output(6, True)                           
+                        GPIO.output(6, True)
 
                     while True:
                         print("--> Attente de la désactivation.. Appuyer sur le bouton pour désactiver")
@@ -335,9 +321,11 @@ try:
                             # requete pour mettre à jour le statut de l'alerte
                             cursor.execute(""" SELECT MAX(idAlerte) FROM Alerte WHERE idBorne = '%s' """% (raw_idBorne))
                             raw_idAlerte = cursor.fetchone()
+                            print(raw_idAlerte)
 
                             time_now = datetime.time(datetime.now())
                             cursor.execute(""" UPDATE Alerte SET Status = '0', FinAlerte = '%s' WHERE idAlerte = '%s' """% (time_now, raw_idAlerte[0]))
+                            
                             conn.commit()
                             
                             cursor.execute(""" SELECT * FROM Alerte WHERE idAlerte = '%s' """% (raw_idAlerte))
@@ -346,7 +334,7 @@ try:
 
                             for x in myresult:
                                 print(x)
-                            
+                                
                             break
 
                         time.sleep(2)
@@ -354,16 +342,18 @@ try:
             except MySQLdb.Error as e:
                 print("Erreur %.1d : %s"% (e.args[0], e.args[1]))
 
+            break # sortir du compteur d'alerte
+
+    print("+---- FIN DU TEST : ----")
+    print("| Nombre d'erreurs rencontrees : %.1i"% (nb_erreurs))
+
 except IOError:
     print("/!\ --> Erreur, le fichier n'existe pas. Impossible d'etablir une distance avec l'obstacle")
 except Exception as excep:
     print("--- ERREUR GLOBALE ---")
     print("TYPE : ", excep.__class__)
     print("MESSAGE : ", excep)
-except KeyboardInterrupt:
-    print("+--- ARRET DU PROGRAMME ---")
-    print("| Nombre d'erreurs rencontrees : %.1i"% (nb_erreurs))
-    GPIO.cleanup()
-    conn.commit()
-    conn.close()
 
+GPIO.cleanup()
+conn.commit()
+conn.close()

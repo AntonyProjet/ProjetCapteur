@@ -12,17 +12,10 @@ Echo = 23   # output ECHO GPIO23
 Trig2 = 24  # input TRIG GPIO24
 Echo2 = 25  # output ECHO GPIO25
 
-button = 2  # input BUTTON GPIO2
-led = 6     # output LED GPIO6
-
 GPIO.setup(Trig,GPIO.OUT)   # definition des broches d'entree/sortie
 GPIO.setup(Echo,GPIO.IN)
 GPIO.setup(Trig2,GPIO.OUT)
 GPIO.setup(Echo2,GPIO.IN)
-
-GPIO.setup(button, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
-GPIO.setup(led,GPIO.OUT)
-GPIO.output(6, False)       # on init notre led en off car pas active
 
 GPIO.output(Trig, False)    # initialisation des sorties TRIG a l'etat bas
 GPIO.output(Trig2, False)
@@ -53,7 +46,6 @@ def measure_capt(Trig, Echo): # mesure des capteurs
                     if (temp_freeze_counter > 1000): # 1000 etant une unite arbitraire de temps pour l'execution du programme. En temps normal, l'emission est faite sous 300 unites
                         print("/!\ Perte de l'onde...")
                         time.sleep(3)
-                        addError()
                         break
 
                 except Exception as excep:
@@ -128,14 +120,10 @@ try:
         _res_moyenne = []
 
         for i in range(10):
-            GPIO.output(6, True) # test led et clignotement
-
             time.sleep(0.25) # 0.25sec
             distance = [] # liste pour recueillir la moyenne des calculs de mesure
             _distance = []
             j = 0
-            
-            GPIO.output(6, False)
             
             for j in range(10): # bouclage pour etablir une moyenne de mesure 
                 time.sleep(0.05) # pause de 50ms pour reduire le probleme hardware au maximum
@@ -175,8 +163,6 @@ try:
 
             res_moyenne.append(moy_distance) # ajout des moyennes dans la liste des moyennes 
             _res_moyenne.append(_moy_distance)
-
-            
         
         if(len(res_moyenne)==0): # si division par 0
             distance_retenue = sum(res_moyenne)/1
@@ -192,7 +178,7 @@ try:
     print("\n+---- FIN DE LA MESURE DES SEUILS : ----+")
     print("| Nombre d'erreurs rencontrees : %.1i"% (nb_erreurs))
     print("| Distances retenues : %.1f cm | %.1f cm"% (distance_retenue, _distance_retenue))
-    print("+------------\n")
+    print("+----\n")
     
     print("Ecriture des donnees dans le fichier texte...")
 
@@ -210,8 +196,6 @@ try:
         print("| --> Capteur 1 : %.1f cm"% (val_lecture))
         print("| --> Capteur 2 : %.1f cm"% (_val_lecture))
         print("--> Lecture : OK")
-        
-    GPIO.output(6, False)
         
 except IOError:
     print("/!\ --> Erreur, le fichier n'existe pas. Impossible de stocker la distance avec l'obstacle")      

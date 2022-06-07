@@ -34,8 +34,6 @@ distance_lit = 0.0 # variable globale pour la distance de l'obstacle, recupere v
 compteur = 0 # variable pour le compteur de detection avant declechement de l'alerte
 nb_erreurs = 0 # variable globale pour le compteur d'erreur
 
-time.sleep(30)
-
 try:
     conn = MySQLdb.connect(host="192.168.10.12",
                            user="Administrateur",
@@ -271,6 +269,7 @@ try:
                     cursor.execute(""" SELECT MAX(idAlerte) FROM Alerte WHERE idBorne = '%s' """% (raw_idBorne))
 
                     raw_idAlerte = cursor.fetchone()
+                    print(raw_idAlerte)
                     
                     cursor.execute(""" SELECT Status FROM Alerte WHERE idAlerte = '%s' """% (raw_idAlerte))
                     

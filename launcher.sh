@@ -1,4 +1,4 @@
-cd / 
+cd /
 cd home/pi/ProjetCapteur
-sudo python led.py
+sudo python3 capteur.py
 cd /

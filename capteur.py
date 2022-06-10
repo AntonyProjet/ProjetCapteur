@@ -34,7 +34,7 @@ distance_lit = 0.0 # variable globale pour la distance de l'obstacle, recupere v
 compteur = 0 # variable pour le compteur de detection avant declechement de l'alerte
 nb_erreurs = 0 # variable globale pour le compteur d'erreur
 
-time.sleep(30)
+time.sleep(30) # temps pour le lancement de la Raspberry
 
 try:
     conn = MySQLdb.connect(host="192.168.10.12",

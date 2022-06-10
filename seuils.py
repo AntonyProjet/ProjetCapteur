@@ -192,7 +192,7 @@ try:
     print("\n+---- FIN DE LA MESURE DES SEUILS : ----+")
     print("| Nombre d'erreurs rencontrees : %.1i"% (nb_erreurs))
     print("| Distances retenues : %.1f cm | %.1f cm"% (distance_retenue, _distance_retenue))
-    print("+------------\n")
+    print("+--------------\n")
     
     print("Ecriture des donnees dans le fichier texte...")
 
